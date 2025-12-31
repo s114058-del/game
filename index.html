@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雙人箭頭反應遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: white;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .game-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .player-section {
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .player-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .player-a .player-name {
+            color: #e74c3c;
+        }
+        
+        .player-b .player-name {
+            color: #3498db;
+        }
+        
+        .score {
+            font-size: 4em;
+            font-weight: bold;
+            color: #333;
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .check-mark, .cross-mark {
+            font-size: 0.6em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .check-mark.show, .cross-mark.show {
+            opacity: 1;
+        }
+        
+        .check-mark {
+            color: #27ae60;
+        }
+        
+        .cross-mark {
+            color: #e74c3c;
+        }
+        
+        .player-a .score {
+            border: 4px solid #e74c3c;
+        }
+        
+        .player-b .score {
+            border: 4px solid #3498db;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .game-box {
+            width: 300px;
+            height: 300px;
+            background: #000;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12em;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .instructions {
+            color: white;
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.1em;
+            max-width: 700px;
+        }
+        
+        .status {
+            color: white;
+            font-size: 1.3em;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #229954;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <h1>⚡ 雙人箭頭反應遊戲 ⚡</h1>
+    
+    <div class="game-container">
+        <div class="player-section player-a">
+            <div class="player-name">玩家 A</div>
+            <div class="score" id="scoreA">
+                <span class="check-mark" id="checkA">✓</span>
+                <span>0</span>
+                <span class="cross-mark" id="crossA">✗</span>
+            </div>
+            <div class="controls">
+                <strong>按鍵:</strong><br>
+                W - 上 ⬆️<br>
+                S - 下 ⬇️<br>
+                A - 左 ⬅️<br>
+                D - 右 ➡️
+            </div>
+        </div>
+        
+        <div class="game-box" id="gameBox"></div>
+        
+        <div class="player-section player-b">
+            <div class="player-name">玩家 B</div>
+            <div class="score" id="scoreB">
+                <span class="check-mark" id="checkB">✓</span>
+                <span>0</span>
+                <span class="cross-mark" id="crossB">✗</span>
+            </div>
+            <div class="controls">
+                <strong>按鍵:</strong><br>
+                ↑ - 上 ⬆️<br>
+                ↓ - 下 ⬇️<br>
+                ← - 左 ⬅️<br>
+                → - 右 ➡️
+            </div>
+        </div>
+    </div>
+    
+    <div class="status" id="status">準備開始...</div>
+    <div class="status" style="font-size: 1.5em; margin-top: 10px;" id="roundInfo">第 0/5 局</div>
+    <button id="startBtn" onclick="startGame()">開始遊戲</button>
+    
+    <div class="instructions">
+        <p>🎮 遊戲規則：黑色方塊會在隨機時間後，快速顯示4個箭頭EMOJI</p>
+        <p>⚡ 箭頭一出現就可以搶答！比拼手速和反應！</p>
+        <p>🔥 難度遞增：第1局0.5秒 → 第2局0.4秒 → 第3局0.3秒 → 第4局0.2秒 → 第5局0.1秒</p>
+        <p>✅ 答對得1分 | ❌ 答錯扣1分 | 共5局</p>
+    </div>
+    
+    <script>
+        const arrows = ['⬆️', '⬇️', '⬅️', '➡️'];
+        let scoreA = 0;
+        let scoreB = 0;
+        let currentSequence = [];
+        let currentIndexA = 0;
+        let currentIndexB = 0;
+        let pressCountA = 0;
+        let pressCountB = 0;
+        let isPlaying = false;
+        let waitingForInput = false;
+        let currentRound = 0;
+        let totalRounds = 5;
+        let showingArrows = false;
+        
+        const gameBox = document.getElementById('gameBox');
+        const scoreAEl = document.getElementById('scoreA');
+        const scoreBEl = document.getElementById('scoreB');
+        const statusEl = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const roundInfoEl = document.getElementById('roundInfo');
+        const checkA = document.getElementById('checkA');
+        const crossA = document.getElementById('crossA');
+        const checkB = document.getElementById('checkB');
+        const crossB = document.getElementById('crossB');
+        
+        function updateScores() {
+            scoreAEl.querySelector('span:nth-child(2)').textContent = scoreA;
+            scoreBEl.querySelector('span:nth-child(2)').textContent = scoreB;
+        }
+        
+        function updateRoundInfo() {
+            roundInfoEl.textContent = `第 ${currentRound}/5 局`;
+        }
+        
+        function getRandomArrow() {
+            return arrows[Math.floor(Math.random() * arrows.length)];
+        }
+        
+        function getDirectionFromKey(key) {
+            const keyMap = {
+                'w': '⬆️', 'W': '⬆️',
+                's': '⬇️', 'S': '⬇️',
+                'a': '⬅️', 'A': '⬅️',
+                'd': '➡️', 'D': '➡️',
+                'ArrowUp': '⬆️',
+                'ArrowDown': '⬇️',
+                'ArrowLeft': '⬅️',
+                'ArrowRight': '➡️'
+            };
+            return keyMap[key];
+        }
+        
+        function getPlayerFromKey(key) {
+            if (['w', 'W', 's', 'S', 'a', 'A', 'd', 'D'].includes(key)) {
+                return 'A';
+            } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+                return 'B';
+            }
+            return null;
+        }
+        
+        async function showSequence() {
+            currentSequence = [];
+            for (let i = 0; i < 4; i++) {
+                currentSequence.push(getRandomArrow());
+            }
+            
+            // 根據局數決定速度：第1局0.5秒，第2局0.4秒，第3局0.3秒，第4局0.2秒，第5局0.1秒
+            const speeds = [500, 400, 300, 200, 100];
+            const displayTime = speeds[currentRound - 1];
+            
+            showingArrows = true;
+            currentIndexA = 0;
+            currentIndexB = 0;
+            pressCountA = 0;
+            pressCountB = 0;
+            waitingForInput = true; // 箭頭一出現就可以開始按鍵！
+            statusEl.textContent = '箭頭出現！快按鍵搶答！';
+            
+            for (let i = 0; i < currentSequence.length; i++) {
+                gameBox.textContent = currentSequence[i];
+                await new Promise(resolve => setTimeout(resolve, displayTime));
+                
+                // 每個箭頭之間空白0.1秒
+                if (i < currentSequence.length - 1) {
+                    gameBox.textContent = '';
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            // 箭頭顯示完畢，繼續作答
+            showingArrows = false;
+            gameBox.textContent = '';
+            gameBox.style.background = '#000';
+            
+            // 如果還沒完成，提示繼續作答
+            if (pressCountA < 4 || pressCountB < 4) {
+                statusEl.textContent = '繼續輸入剩餘箭頭！';
+            }
+        }
+        
+        async function startRound() {
+            if (!isPlaying) return;
+            
+            currentRound++;
+            updateRoundInfo();
+            
+            if (currentRound > totalRounds) {
+                endGame();
+                return;
+            }
+            
+            waitingForInput = false;
+            currentIndexA = 0;
+            currentIndexB = 0;
+            pressCountA = 0;
+            pressCountB = 0;
+            gameBox.textContent = '';
+            gameBox.style.background = '#000';
+            
+            const waitTime = Math.floor(Math.random() * 6000) + 1000;
+            statusEl.textContent = `第 ${currentRound} 局 - 等待中...`;
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            
+            if (isPlaying) {
+                statusEl.textContent = '箭頭出現！快按鍵！';
+                await showSequence();
+            }
+        }
+        
+        function endGame() {
+            isPlaying = false;
+            waitingForInput = false;
+            startBtn.textContent = '開始遊戲';
+            
+            let winner = '';
+            if (scoreA > scoreB) {
+                winner = '玩家A獲勝！🎉';
+                gameBox.textContent = '🏆';
+                gameBox.style.background = '#e74c3c';
+            } else if (scoreB > scoreA) {
+                winner = '玩家B獲勝！🎉';
+                gameBox.textContent = '🏆';
+                gameBox.style.background = '#3498db';
+            } else {
+                winner = '平手！🤝';
+                gameBox.textContent = '🤝';
+                gameBox.style.background = '#f39c12';
+            }
+            
+            statusEl.textContent = `遊戲結束！${winner} (${scoreA} : ${scoreB})`;
+        }
+        
+        function handleKeyPress(e) {
+            if (!waitingForInput || !isPlaying) return;
+            
+            const direction = getDirectionFromKey(e.key);
+            const player = getPlayerFromKey(e.key);
+            
+            if (!direction || !player) return;
+            
+            e.preventDefault();
+            
+            // 檢查該玩家是否已經按了4次
+            if (player === 'A' && pressCountA >= 4) return;
+            if (player === 'B' && pressCountB >= 4) return;
+            
+            // 玩家A和玩家B分別追蹤自己的進度
+            let currentIndex = player === 'A' ? currentIndexA : currentIndexB;
+            
+            // 檢查該玩家是否已完成所有箭頭
+            if (currentIndex >= currentSequence.length) return;
+            
+            const correctArrow = currentSequence[currentIndex];
+            
+            // 判斷是否正確：按鍵方向必須對應EMOJI箭頭方向
+            if (direction === correctArrow) {
+                // 答對：加分並前進到下一個箭頭
+                if (player === 'A') {
+                    scoreA++;
+                    currentIndexA++;
+                    pressCountA++;
+                    checkA.classList.add('show');
+                    setTimeout(() => checkA.classList.remove('show'), 300);
+                } else {
+                    scoreB++;
+                    currentIndexB++;
+                    pressCountB++;
+                    checkB.classList.add('show');
+                    setTimeout(() => checkB.classList.remove('show'), 300);
+                }
+            } else {
+                // 答錯：扣分且按鍵次數+1，但不前進（可以繼續嘗試同一個箭頭）
+                if (player === 'A') {
+                    scoreA--;
+                    pressCountA++;
+                    crossA.classList.add('show');
+                    setTimeout(() => crossA.classList.remove('show'), 300);
+                } else {
+                    scoreB--;
+                    pressCountB++;
+                    crossB.classList.add('show');
+                    setTimeout(() => crossB.classList.remove('show'), 300);
+                }
+            }
+            
+            updateScores();
+            
+            // 當兩位玩家都按了4次後才進入下一局（不管有沒有全部答對）
+            if (pressCountA >= 4 && pressCountB >= 4) {
+                waitingForInput = false;
+                statusEl.textContent = `第 ${currentRound} 局完成！準備下一局...`;
+                setTimeout(() => {
+                    if (isPlaying) {
+                        startRound();
+                    }
+                }, 1500);
+            }
+        }
+        
+        function startGame() {
+            if (isPlaying) {
+                isPlaying = false;
+                startBtn.textContent = '開始遊戲';
+                statusEl.textContent = '遊戲中止';
+                waitingForInput = false;
+                gameBox.textContent = '';
+                gameBox.style.background = '#000';
+            } else {
+                scoreA = 0;
+                scoreB = 0;
+                currentRound = 0;
+                updateScores();
+                updateRoundInfo();
+                isPlaying = true;
+                startBtn.textContent = '停止遊戲';
+                statusEl.textContent = '遊戲開始！';
+                startRound();
+            }
+        }
+        
+        document.addEventListener('keydown', handleKeyPress);
+    </script>
+</body>
+</html>
